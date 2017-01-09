@@ -52,17 +52,16 @@ class Model:
 		tf.initialize_all_variables().run(session=self.sess)
 
 	def test(self):
-		print "Validating..."
 		test_loss = 0.0
 		test_count = 0.0
 		t1 = time()
-		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(10000,"../wikitest.csv")):
-			if i % 10 == 0:
-				print "Validated ",10000*i, " rows"
+		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(1000,"../wikitest.csv")):
 			feed_dict = {self.output_placeholder:response_batch,self.summary_index_placeholder:summary_batch,self.query_index_placeholder:query_batch,self.dropout_placeholder:1.0}
 			test_loss += len(summary_batch)*self.sess.run(self.logloss,feed_dict)
 			test_count += len(summary_batch)
+		print "=========================================="
 		print "Validation result: ",test_loss/test_count , " Time elapsed:",time()-t1
+		print "=========================================="
 		return test_loss/test_count
 	def train(self):
 		validation_summary = []
@@ -82,7 +81,7 @@ class Model:
 
 				# Calculate a training error as we go along
 				if i % 1000 == 0 and i > 0:
-					print "Train step ",i, " training loss=",train_loss/train_count, " Time elapsed: ",time()-t1
+					print "Epoch ",epoch, " Train step ",i, " training loss=",train_loss/train_count, " Time elapsed: ",time()-t1
 					#print "Output "," ".join(map(str,list(self.sess.run(self.discriminator.o,feed_dict))))
 					train_loss = 0.0
 					train_count = 0.0
@@ -91,7 +90,7 @@ class Model:
 				if i % 10000 == 0 and i > 0:
 					self.encoder.save(self.sess)
 				# Sometimes validate our progress
-				if i % 10000 == 0 and i > 0:
+				if i % 30000 == 0:
 					validation_log.write(str(self.test())+"\n")
 		validation_log.close()
 model = Model(max_query_words=100,max_summary_words=100)
