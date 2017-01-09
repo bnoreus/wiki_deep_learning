@@ -54,13 +54,13 @@ class Model:
 	def test(self):
 		print "Validating..."
 		test_loss = 0.0
-		test_count = 0.
+		test_count = 0.0
 		t1 = time()
 		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(1000,"../wikitest.csv")):
 			if i % 10 == 0:
 				print "Validated ",1000*i, " rows"
 			feed_dict = {self.output_placeholder:response_batch,self.summary_index_placeholder:summary_batch,self.query_index_placeholder:query_batch,self.dropout_placeholder:1.0}
-			test_loss += self.sess.run(self.logloss,feed_dict)
+			test_loss += len(summary_batch)*self.sess.run(self.logloss,feed_dict)
 			test_count += len(summary_batch)
 		print "Validation result: ",test_loss/test_count , " Time elapsed:",time()-t1
 
@@ -77,14 +77,14 @@ class Model:
 			_,loss = self.sess.run([self.train_step,self.logloss],feed_dict)
 			train_count += 1.0
 			train_loss += loss
-			rows_trained += len(response_batch)
-		
+	
 			if i % 100 == 0 and i > 0:
 				print "Train step ",i, " training loss=",train_loss/train_count, " Time elapsed: ",time()-t1
 				#print "Output "," ".join(map(str,list(self.sess.run(self.discriminator.o,feed_dict))))
 				train_loss = 0.0
 				train_count = 0.0
-			if i % 1000 == 0 and i > 0:
+				t1 = time()
+			if i % 10000 == 0 and i > 0:
 				self.encoder.save(self.sess)
 			if i % 100000 == 0:
 				self.test()
