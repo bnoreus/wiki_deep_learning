@@ -21,6 +21,8 @@ class TrainDataBatcher:
 					file.write(" ".join(map(str,summary))+","+" ".join(map(str,query))+","+str(response)+"\n")
 
 	# Retreive a data batch from a data cache
+	# This assumes that you have created a cache CSV file with the function create_cache() described above.
+	# I also recommend create a cache file and splitting that file randomly into a test a train set.
 	def mini_batch_from_cache(self,batch_size,file_name):
 		summary_batch = []
 		query_batch = []

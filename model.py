@@ -8,6 +8,7 @@ from discriminator import Discriminator
 from encoder import Encoder
 from train_data_batcher import TrainDataBatcher
 from word_dict import WordDict
+from time import time
 import sys
 class Model:
 	def __init__(self,max_query_words,max_summary_words):
@@ -51,7 +52,17 @@ class Model:
 		tf.initialize_all_variables().run(session=self.sess)
 
 	def test(self):
-		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(1000,"wikitest.csv")):
+		print "Validating..."
+		test_loss = 0.0
+		test_count = 0.
+		t1 = time()
+		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(1000,"../wikitest.csv")):
+			if i % 10 == 0:
+				print "Validated ",1000*i, " rows"
+			feed_dict = {self.output_placeholder:response_batch,self.summary_index_placeholder:summary_batch,self.query_index_placeholder:query_batch,self.dropout_placeholder:1.0}
+			test_loss += self.sess.run(self.logloss,feed_dict)
+			test_count += len(summary_batch)
+		print "Validation result: ",test_loss/test_count , " Time elapsed:",time()-t1
 
 	def train(self):
 		validation_summary = []
@@ -60,7 +71,8 @@ class Model:
 		rows_trained = 0
 		train_loss = 0.0
 		train_count = 0.0
-		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(self.batch_size,"wikitrain.csv")):
+		t1 = time()
+		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(self.batch_size,"../wikitrain.csv")):
 			feed_dict = {self.output_placeholder:response_batch,self.summary_index_placeholder:summary_batch,self.query_index_placeholder:query_batch,self.dropout_placeholder:1.0}
 			_,loss = self.sess.run([self.train_step,self.logloss],feed_dict)
 			train_count += 1.0
@@ -68,12 +80,13 @@ class Model:
 			rows_trained += len(response_batch)
 		
 			if i % 100 == 0 and i > 0:
-				print "Train step ",i, " training loss=",train_loss/train_count
+				print "Train step ",i, " training loss=",train_loss/train_count, " Time elapsed: ",time()-t1
 				#print "Output "," ".join(map(str,list(self.sess.run(self.discriminator.o,feed_dict))))
 				train_loss = 0.0
 				train_count = 0.0
 			if i % 1000 == 0 and i > 0:
 				self.encoder.save(self.sess)
-
+			if i % 100000 == 0:
+				self.test()
 model = Model(max_query_words=100,max_summary_words=100)
 model.train()
