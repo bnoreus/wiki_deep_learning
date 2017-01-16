@@ -17,7 +17,7 @@ class TrainDataBatcher:
 	# Creates a cache of the original MongoDB. The cache is very memory efficient because it stores word indices, not words. 
 	# In order to recover the words, the original WordDict object is needed.
 	def create_cache(self):
-		with open("wiki_cache.csv","w") as file:
+		with open("../wiki_cache.csv","w") as file:
 			for batch_idx,(summary_batch,query_batch,response_batch) in enumerate(self.mini_batch(500,2,100,100)):
 				if batch_idx % 1000 == 0:
 					print "Saved ",batch_idx*500, " rows of data"
@@ -70,7 +70,7 @@ class TrainDataBatcher:
 				yield line # chain parsing logic/functions here
 
 	def iter_test(self):
-		for line in open("wikitest.csv"):
+		for line in open("../wikitest.csv"):
 			yield line
 	# Retreive a data batch from a data cache
 	# This assumes that you have created a cache CSV file with the function create_cache() described above.

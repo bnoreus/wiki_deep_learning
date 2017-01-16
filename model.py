@@ -105,17 +105,17 @@ class Model:
 					self.check_spot_termination()
 
 				# Calculate a training error as we go along
-				if i % 1000 == 0 and i > 0:
+				if i % 1000 == 0:
 					print "Epoch ",epoch, " Train step ",i, " training loss=",train_loss/train_count, " Time elapsed: ",time()-t1
 					#print "Output "," ".join(map(str,list(self.sess.run(self.discriminator.o,feed_dict))))
 					train_loss = 0.0
 					train_count = 0.0
 					t1 = time()
 				# Sometimes save the model
-				if i % 30000 == 0 and i > 0:
+				if i % 30000 == 0:
 					self.save()
 				# Sometimes validate our progress
-				if i % 30000 == 0 and i > 0:
+				if i % 30000 == 0:
 					validation_log.write(str(self.test())+"\n")
 		validation_log.close()
 
