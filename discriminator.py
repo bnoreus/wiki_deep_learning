@@ -11,7 +11,7 @@ class Discriminator:
 		pass
 	# Takes the word indices for a batch of queries and a batch of summaries and converts to output probability
 	def predict(self,query_vector,summary_vector):
-		output = tf.reduce_sum(tf.mul(query_vector,summary_vector),axis=1)
+		output = tf.reduce_sum(query_vector*summary_vector,axis=1)
 		self.o = output
 		prob = tf.sigmoid(output)
 		return prob
