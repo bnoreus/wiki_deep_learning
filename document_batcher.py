@@ -26,7 +26,7 @@ class DocumentBatcher:
 				query_paragraphs = query_doc[1:] # Remove the summary. We won't sample from that.
 				query_paragraph = query_paragraphs[random.randint(0,len(query_paragraphs)-1)]
 				
-				# Build triplets (doc,query,response)
+				# Build triplets (summary,query,response)
 				for j,d in enumerate(documents):
 					response = 1.0 if j==sample_idx else 0.0
 					documents[j] = (d[0],query_paragraph,response)
@@ -34,3 +34,10 @@ class DocumentBatcher:
 				yield documents
 				documents = []
 
+	# Creates a iterator over every document used in the training data. This is used when visualing the results.
+	def iter_summaries(self):
+		for doc in self.document_table.find().batch_size(400):
+			paragraphs = doc["text"].split("\n")
+			if len(paragraphs) > 2:
+				summary = paragraphs[0]
+				yield doc["title"],summary

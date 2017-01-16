@@ -1,5 +1,0 @@
-*.pyc
-*.csv
-TextCleaner/target/*
-TextCleaner/tmp/*
-models/*

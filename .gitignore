@@ -3,3 +3,5 @@
 TextCleaner/target/*
 TextCleaner/tmp/*
 models/*
+pretrained/*
+vector_cache/*
