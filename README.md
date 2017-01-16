@@ -1,7 +1,7 @@
 # Deep Learning on the English Wikipedia Dataset
 
 The goal of this project is to create a Question Answering bot. To get there, I have to solve various Information Retrieval tasks.
-In this task, I am trying to use convolutional neural networks to encode wikipedia article summaries. 
+In this task, I am trying to use convolutional neural networks to encode wikipedia articles into fixed size vectors.
 
 
 # Creating Data
@@ -14,3 +14,4 @@ pre-processing. This is done with the Apache Spark application found in the fold
 To run this Spark app, you need to have spark installed. The app can be run with the "run_spark.sh" script.
 To get the script to run, you need to edit the script such that it points to the path at which your Apache Spark installation is.
 
+# 
