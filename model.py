@@ -61,10 +61,6 @@ class Model:
 	# Save model to disk
 	def save(self):
 		t1 = time()
-		print "save:"
-		for v in tf.trainable_variables():
-			print v.name
-			print hash(str(self.sess.run(tf.reshape(v,[-1]))))
 		self.saver.save(self.sess,"models/encoder.ckpt")
 		print "TIME TO SAVE MODEL",time()-t1
 
@@ -72,9 +68,6 @@ class Model:
 		t1 = time()
 		print "load:"
 		self.saver.restore(self.sess,"models/encoder.ckpt")
-		for v in tf.trainable_variables():
-			print v.name
-			print hash(str(self.sess.run(tf.reshape(v,[-1]))))
 		print "TIME TO LOAD MODEL ",time()-t1
 	def test(self):
 		test_loss = 0.0
