@@ -110,7 +110,6 @@ class Model:
 				if i % 150 == 0:
 					t2 = time()
 					self.check_spot_termination()
-					print "Poll elapsed ",time()-t2
 
 				# Calculate a training error as we go along
 				if i % 1000 == 0 and i > 0:
