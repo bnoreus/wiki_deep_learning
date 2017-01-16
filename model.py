@@ -11,6 +11,10 @@ from word_dict import WordDict
 from time import time
 import sys
 import requests
+
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
 class Model:
 	def __init__(self,max_query_words,max_summary_words):
 		word_dict = WordDict(threshold=5)

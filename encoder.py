@@ -3,8 +3,7 @@
 
 import tensorflow as tf 
 import numpy as np 
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
+
 
 from os import listdir
 from os.path import isfile, join
