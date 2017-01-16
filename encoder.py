@@ -41,7 +41,7 @@ class Encoder:
 
 					pooled = tf.nn.max_pool(hidden_1,ksize=[1,max_text_length-(filter_size-1),1,1],strides=[1,1,1,1],padding="VALID",name="pool")
 					pooled_outputs.append(pooled)
-			concat_pooled = tf.concat(3,pooled_outputs)
+			concat_pooled = tf.concat_v2(pooled_outputs,3)
 			concat_pooled = tf.reshape(concat_pooled,[-1,tot_num_filters])
 			concat_pooled = tf.nn.dropout(concat_pooled,self.dropout_placeholder)
 			w_out = tf.get_variable("w_out",shape=[tot_num_filters,code_size],initializer=tf.contrib.layers.xavier_initializer())
