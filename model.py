@@ -6,8 +6,8 @@ import numpy as np
 import tensorflow.contrib.slim as tfslim
 from discriminator import Discriminator
 from encoder import Encoder
-from train_data_batcher import TrainDataBatcher
-from word_dict import WordDict
+from document_batcher import DocumentBatcher
+from data_set import DataSet
 from time import time
 import sys
 import requests
@@ -17,18 +17,20 @@ from boto.s3.key import Key
 
 class Model:
 	def __init__(self,max_query_words,max_summary_words):
-		word_dict = WordDict(threshold=5)
-		self.data_batcher = TrainDataBatcher(word_dict)
+		self.data_set = DataSet()
+		self.data_set.load("normal_ds")
+		self.pad_symbol = self.data_set.pad_symbol()
+		self.data_batcher = DocumentBatcher()
 		self.batch_size = 32
 		self.documents_per_query = 2
 		self.embedding_size = 128
-		self.vocab_size = word_dict.vocab_size()
+		self.vocab_size = self.data_set.vocab_size()
 		self.max_query_words = max_query_words
 		self.max_summary_words = max_summary_words
 		self.embedding_learning_scaler = 5.0
 		# Placeholders:
-		self.query_index_placeholder = tf.placeholder(tf.int32,shape=[None,max_query_words])
-		self.summary_index_placeholder = tf.placeholder(tf.int32,shape=[None,max_summary_words])
+		self.query_index_placeholder = tf.placeholder(tf.int32,shape=[None,None])
+		self.summary_index_placeholder = tf.placeholder(tf.int32,shape=[None,None])
 		self.output_placeholder = tf.placeholder(tf.float32,shape=[None])
 		self.dropout_placeholder = tf.placeholder(tf.float32)
 		# Models
@@ -36,8 +38,8 @@ class Model:
 		self.discriminator = Discriminator()
 
 		# Forward pass 
-		self.query_vector = tf.clip_by_norm(self.encoder.encode(self.query_index_placeholder,code_size=300),3.0,axes=1)
-		self.summary_vector = tf.clip_by_norm(self.encoder.encode(self.summary_index_placeholder,code_size=300),3.0,axes=1)
+		self.query_vector = tf.clip_by_norm(self.encoder.encode_cnn(self.query_index_placeholder,max_text_length=max_query_words,code_size=300),3.0,axes=1)
+		self.summary_vector = tf.clip_by_norm(self.encoder.encode_cnn(self.summary_index_placeholder,max_text_length=max_summary_words,code_size=300),3.0,axes=1)
 		self.prediction = self.discriminator.predict(self.query_vector,self.summary_vector)
 
 		# Optimization
@@ -56,8 +58,8 @@ class Model:
 		tf.initialize_all_variables().run(session=self.sess)
 		self.saver = tf.train.Saver()
 		# Stuff needed to save the model to AWS S3:
-		conn = S3Connection()
-		self.bucket = conn.get_bucket("burenoreus-machinelearning")
+		conn = None#S3Connection()
+		self.bucket = None#conn.get_bucket("burenoreus-machinelearning")
 	# Save model to disk
 	def save(self):
 		t1 = time()
@@ -73,7 +75,9 @@ class Model:
 		test_loss = 0.0
 		test_count = 0.0
 		t1 = time()
-		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(1000,self.data_batcher.iter_test)):
+		for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.batch(self.data_set.iter_test,self.documents_per_query,1000)):
+			summary_batch = self.data_batcher.pad_batch(summary_batch,self.pad_symbol,100)
+			query_batch = self.data_batcher.pad_batch(query_batch,self.pad_symbol,100)
 			feed_dict = {self.output_placeholder:response_batch,self.summary_index_placeholder:summary_batch,self.query_index_placeholder:query_batch,self.dropout_placeholder:1.0}
 			test_loss += len(summary_batch)*self.sess.run(self.logloss,feed_dict)
 			test_count += len(summary_batch)
@@ -90,19 +94,21 @@ class Model:
 		train_loss = 0.0
 		train_count = 0.0
 		t1 = time()
-		t2 = time()
+		best_test_loss = 99999.0
 		validation_log = open("validation_log.txt","w")
 		validation_log.write("Validation errors:")
 		for epoch in range(100):
-			for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.mini_batch_from_cache(self.batch_size,self.data_batcher.iter_train)):
-				feed_dict = {self.output_placeholder:response_batch,self.summary_index_placeholder:summary_batch,self.query_index_placeholder:query_batch,self.dropout_placeholder:0.5}
+			for i,(summary_batch,query_batch,response_batch) in enumerate(self.data_batcher.batch(self.data_set.iter_train,self.documents_per_query,self.batch_size)):
+				summary_batch = self.data_batcher.pad_batch(summary_batch,self.pad_symbol,100)
+				query_batch = self.data_batcher.pad_batch(query_batch,self.pad_symbol,100)
+				feed_dict = {self.output_placeholder:response_batch,self.summary_index_placeholder:summary_batch,self.query_index_placeholder:query_batch,self.dropout_placeholder:0.8}
 				_,loss = self.sess.run([self.train_step,self.logloss],feed_dict)
+	
 				train_count += 1.0
 				train_loss += loss
 
 				if i % 150 == 0:
-					t2 = time()
-					self.check_spot_termination()
+					pass#self.check_spot_termination()
 
 				# Calculate a training error as we go along
 				if i % 1000 == 0:
@@ -111,12 +117,15 @@ class Model:
 					train_loss = 0.0
 					train_count = 0.0
 					t1 = time()
-				# Sometimes save the model
+				# Sometimes save the model and validate progress
 				if i % 30000 == 0:
-					self.save()
-				# Sometimes validate our progress
-				if i % 30000 == 0:
-					validation_log.write(str(self.test())+"\n")
+					
+					test_loss = self.test()
+					if test_loss < best_test_loss:
+						self.save()
+					else:
+						print "WE DIDN'T IMPROVE VALIDATION LOSS. DO NOT SAVE THAT MODEL"
+					validation_log.write(str(test_loss)+"\n")
 		validation_log.close()
 
 	def check_spot_termination(self):

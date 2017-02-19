@@ -95,7 +95,7 @@ class TrainDataBatcher:
 		yield summary_batch,query_batch,response_batch
 				
 	# Retrieve a mini batch generator of [batch_size] of document pairs of a certain dilution. Dilution is the number of documents per query.
-	def mini_batch(self,batch_size,documents_per_query,max_summary_words,max_query_words):
+	def mini_batch(self,batch_size,documents_per_query):
 		summary_batch = []
 		query_batch = []
 		response_batch = []
@@ -119,6 +119,9 @@ class TrainDataBatcher:
 					query_batch = []
 					response_batch = []
 		yield summary_batch,query_batch,response_batch
+
+	def add_padding(self,sentences,max_sentence_length):
+		
 
 	def iter_summaries(self,batch_size,max_summary_words):
 		summary_batch = []

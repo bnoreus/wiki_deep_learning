@@ -11,18 +11,18 @@ from time import time
 
 class Encoder:
 	def __init__(self,vocabulary_size,embedding_size,dropout_placeholder):
-		self.word_embedding = tf.get_variable("word_embedding",shape=[vocabulary_size,embedding_size])
+		self.word_embedding = tf.get_variable("word_embedding",shape=[vocabulary_size+1,embedding_size]) # Remove that fucking +1
 		self.embedding_size = embedding_size
 		self.dropout_placeholder = dropout_placeholder
 		self.reuse=None
 
 
 
-	def encode(self,index_placeholder,code_size=100):
+	def encode_cnn(self,index_placeholder,max_text_length,code_size=100):
 		filter_sizes = [2,3,4,5]
 		num_filters = 100
 
-		max_text_length = index_placeholder.get_shape()[1]
+		#max_text_length = index_placeholder.get_shape()[1]
 		tot_num_filters = num_filters*len(filter_sizes)
 		#Embedding layer:
 		embedding_layer = tf.nn.embedding_lookup(self.word_embedding,index_placeholder)
@@ -51,3 +51,6 @@ class Encoder:
 			return output_layer
 			
 	
+	def encode_rnn(self,index_placeholder,code_size=100):
+		print index_placeholder.get_shape()
+		raise Exception("OK")
